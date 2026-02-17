@@ -1,0 +1,135 @@
+:root {
+  --main-font: "Nunito Sans", sans-serif;
+}
+
+.section {
+  display: flex;
+  justify-content: center;
+  padding-top: 50px;
+}
+
+.sectionContainer {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 16px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 100px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.contentPart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.playersWrapper {
+  width: 100%;
+  height: 32px;
+  border-radius: 4px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-color: #717c96;
+}
+
+.playerBlue {
+  background-color: #0364ee;
+}
+.playerRed {
+  background-color: #ff0055;
+}
+
+.playerTxt {
+  color: #ffffff;
+
+  font-family: var(--main-font);
+  font-style: Bold;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 14px;
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  grid-template-rows: 32px 1fr;
+  gap: 4px;
+}
+
+.letters {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+}
+
+.numbers {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  gap: 2px;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--main-font);
+  font-weight: 700;
+  font-size: 14px;
+  color: #717c96b3;
+}
+
+.grid {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  background-color: transparent;
+  gap: 2px;
+}
+
+.cell {
+  width: 32px;
+  height: 32px;
+  background: #61c5ff4d;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.cell:hover {
+  background-color: #61c6ff;
+}
+
+.cellEnemy {
+  background: #9d9d9d4d;
+}
+
+.cellEnemy:hover {
+  background-color: #35383980;
+}
+
+.vl {
+  height: 500px;
+  width: 1px;
+  background-color: #717c9633;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

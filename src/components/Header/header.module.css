@@ -1,0 +1,27 @@
+.header {
+  background: rgba(157, 157, 157, 0.1);
+  border-bottom: 2px solid rgba(113, 124, 150, 0.2);
+}
+.headerContainer {
+  margin: 0 auto;
+  max-width: 1400px;
+  padding: 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 12.5px;
+}
+.headerLink {
+  /* background-color: #242424; */
+}
+.headerLogoFigma {
+  height: 2.54vh;
+}
+.headerLine {
+  height: 2.65vh;
+  width: 0.11vw;
+  background-color: rgba(209, 210, 222, 1);
+}
+.headerLogo {
+  height: 2.65vh;
+}
