@@ -8,6 +8,10 @@
   padding: 16px;
 
   display: flex;
+  justify-content: space-between;
+}
+.headerLogos {
+  display: flex;
   align-items: center;
   gap: 12.5px;
 }

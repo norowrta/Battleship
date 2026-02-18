@@ -1,5 +1,6 @@
 :root {
   --main-font: "Nunito Sans", sans-serif;
+  --sub-font: "Inter", sans-serif;
 }
 
 .section {
@@ -25,7 +26,7 @@
 .contentPart {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .playersWrapper {
@@ -132,4 +133,71 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.shipyard {
+  display: flex;
+  gap: 24px;
+  justify-content: start;
+  align-items: center;
+
+  height: 84px;
+}
+.shipyardTitle {
+  transform: rotate(-90deg);
+  width: 84px;
+  height: fit-content;
+
+  color: #717c96;
+
+  font-family: var(--main-font);
+  font-style: Bold;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 15%;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.graveyardShips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  grid-column-gap: 24px;
+  grid-row-gap: 4px;
+}
+.shipyardDestroyed {
+  color: #353839;
+
+  font-family: var(--sub-font);
+  font-style: Medium;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0%;
+  text-align: left;
+
+  width: fit-content;
+
+  transition: all 0.2 ease-in-out;
+}
+
+.destroyedShip {
+  color: #ff0055;
+  text-decoration-line: line-through;
+}
+.shipyardShips {
+  transform: rotate(90deg);
+  display: grid;
+  
+
+}
+vnnnvvvnvnvddddeeeeesss
+.ship {
+  width: fit-content;
+  height: fit-content;
+}
+.shipCell {
+  width: 32px;
+  height: 32px;
 }
