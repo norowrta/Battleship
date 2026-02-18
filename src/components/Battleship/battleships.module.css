@@ -110,11 +110,6 @@
   background: #61c5ff4d;
   border-radius: 4px;
   transition: background-color 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.cell:hover {
-  background-color: #61c6ff;
 }
 
 .cellEnemy {
@@ -144,9 +139,8 @@
   height: 84px;
 }
 .shipyardTitle {
-  transform: rotate(-90deg);
-  width: 84px;
-  height: fit-content;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 
   color: #717c96;
 
@@ -187,17 +181,24 @@
   text-decoration-line: line-through;
 }
 .shipyardShips {
-  transform: rotate(90deg);
-  display: grid;
-  
-
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  max-width: 300px;
 }
-vnnnvvvnvnvddddeeeeesss
+
 .ship {
+  display: flex;
   width: fit-content;
   height: fit-content;
 }
 .shipCell {
   width: 32px;
   height: 32px;
+  /* transform: rotate(90deg); */
+}
+
+.cellIcon {
+  /* transform: rotate(90deg); */
 }

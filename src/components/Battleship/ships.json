@@ -4,7 +4,7 @@
     "size": 4,
     "placed": false,
     "orientation": "horizontal",
-    "coordinates": "",
+    "coordinates": [],
     "hits": 0,
     "sunk": false
   },
@@ -13,7 +13,7 @@
     "size": 3,
     "placed": false,
     "orientation": "horizontal",
-    "coordinates": "",
+    "coordinates": [],
     "hits": 0,
     "sunk": false
   },
@@ -22,7 +22,7 @@
     "size": 2,
     "placed": false,
     "orientation": "horizontal",
-    "coordinates": "",
+    "coordinates": [],
     "hits": 0,
     "sunk": false
   },
@@ -31,7 +31,7 @@
     "size": 5,
     "placed": false,
     "orientation": "horizontal",
-    "coordinates": "",
+    "coordinates": [],
     "hits": 0,
     "sunk": false
   },
@@ -40,7 +40,7 @@
     "size": 3,
     "placed": false,
     "orientation": "horizontal",
-    "coordinates": "",
+    "coordinates": [],
     "hits": 0,
     "sunk": false
   }
