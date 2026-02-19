@@ -34,7 +34,7 @@ function addClass(e) {
 }
 
 export default function Board() {
-  const [board] = useState(() => createBoard());
+  const [board, setBoard] = useState(() => createBoard());
   const [shipsState, setShipsState] = useState(() => ships);
   const [activeId, setActiveId] = useState(null);
 
@@ -95,6 +95,21 @@ export default function Board() {
         return ship;
       }),
     );
+
+    setBoard((prevBoard) =>
+      prevBoard.map((cell) => {
+        const isNewCell = newCoordinates.includes(cell.id);
+        const isOldCell =
+          currentShip.placed && currentShip.coordinates.includes(cell.id);
+
+        if (isNewCell) {
+          return { ...cell, hasShip: true, status: "ship" };
+        } else if (isOldCell) {
+          return { ...cell, hasShip: false, status: "empty" };
+        }
+        return cell;
+      }),
+    );
   }
 
   function getShipContent(cellId) {
@@ -150,6 +165,18 @@ export default function Board() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [activeId]);
+
+  useEffect(() => {
+    let boardJson = JSON.stringify(board);
+
+    fetch("http://localhost:3000/api/board", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: boardJson,
+    });
+  }, [board]);
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
