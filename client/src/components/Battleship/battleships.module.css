@@ -13,6 +13,12 @@
   margin: 0 auto;
   max-width: 1200px;
   padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 30px;
 }
 
 .container {
@@ -114,6 +120,7 @@
 
 .cellEnemy {
   background: #9d9d9d4d;
+  cursor: pointer;
 }
 
 .cellEnemy:hover {
@@ -201,4 +208,31 @@
 
 .cellIcon {
   /* transform: rotate(90deg); */
+}
+
+.buttonPlay {
+  cursor: pointer;
+
+  padding: 10px 30px;
+  border-radius: 4px;
+
+  color: #ffffff;
+
+  font-family: var(--main-font);
+  font-style: Bold;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 14px;
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+
+  background-color: #0364ee;
+
+  border: none;
+
+  transition: background-color 0.2 ease-in-out;
+}
+.buttonPlay:hover {
+  background-color: #0351be;
 }
