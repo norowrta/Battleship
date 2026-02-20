@@ -4,27 +4,13 @@ import DraggableShip from "./DraggableShip.jsx";
 import DroppableCell from "./DroppableCell.jsx";
 import css from "./battleships.module.css";
 import Icon from "../Icon";
-import ships from "./ships.json";
+// import ships from "../../../../../server/ships.json";
 
-const size = 10 * 10;
+// const size = 10 * 10;
+
 const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 let player;
-
-function createBoard() {
-  let board = [];
-  for (let i = 0; i < size; i++) {
-    const cell = {
-      id: i,
-      x: i % 10,
-      y: Math.floor(i / 10),
-      hasShip: false,
-      status: "empty",
-    };
-    board.push(cell);
-  }
-  return board;
-}
 
 function addClass(e) {
   e.preventDefault();
@@ -34,9 +20,27 @@ function addClass(e) {
 }
 
 export default function Board() {
-  const [board, setBoard] = useState(() => createBoard());
-  const [shipsState, setShipsState] = useState(() => ships);
+  const [board, setBoard] = useState([]);
+  const [shipsState, setShipsState] = useState([]);
   const [activeId, setActiveId] = useState(null);
+
+  useEffect(() => {
+    async function loadBoard() {
+      const response = await fetch("http://localhost:3000/api/board");
+      const data = await response.json();
+      setBoard(data.board);
+    }
+    loadBoard();
+  }, []);
+
+  useEffect(() => {
+    async function loadShips() {
+      const response = await fetch("http://localhost:3000/api/ships");
+      const data = await response.json();
+      setShipsState(data);
+    }
+    loadShips();
+  }, []);
 
   function handleDragStart(event) {
     setActiveId(event.active.id);
