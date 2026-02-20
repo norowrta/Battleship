@@ -24,11 +24,16 @@ function getShips() {
 }
 
 function getBoard() {
+  if (board.length < 1) {
+    return createBoard();
+  }
+
   return board;
 }
 
 function setBoard(newBoard) {
   board = newBoard;
+  console.log(newBoard);
 }
 
 module.exports = {

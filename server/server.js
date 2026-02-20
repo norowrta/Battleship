@@ -18,7 +18,8 @@ app.post("/api/board", (req, res) => {
 });
 
 app.get("/api/board", (req, res) => {
-  res.json({ board: game.getBoard() });
+
+  res.json({ board: game.getBoard() });  
 });
 
 app.listen(PORT, () => {

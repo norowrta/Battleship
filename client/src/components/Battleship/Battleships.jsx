@@ -103,8 +103,7 @@ export default function Board() {
     setBoard((prevBoard) =>
       prevBoard.map((cell) => {
         const isNewCell = newCoordinates.includes(cell.id);
-        const isOldCell =
-          currentShip.placed && currentShip.coordinates.includes(cell.id);
+        const isOldCell = currentShip.placed && currentShip.coordinates.includes(cell.id);
 
         if (isNewCell) {
           return { ...cell, hasShip: true, status: "ship" };
