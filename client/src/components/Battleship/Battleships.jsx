@@ -4,6 +4,8 @@ import DraggableShip from "./DraggableShip.jsx";
 import DroppableCell from "./DroppableCell.jsx";
 import css from "./battleships.module.css";
 import Icon from "../Icon";
+import axios from "axios";
+
 // import ships from "../../../../../server/ships.json";
 
 // const size = 10 * 10;
@@ -23,24 +25,55 @@ export default function Board() {
   const [board, setBoard] = useState([]);
   const [shipsState, setShipsState] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [previewCells, setPreviewCells] = useState([]);
+  const [oppBoard, setOppBoard] = useState([]);
 
   useEffect(() => {
     async function loadBoard() {
-      const response = await fetch("http://localhost:3000/api/board");
-      const data = await response.json();
-      setBoard(data.board);
+      try {
+        const response = await axios.get("http://localhost:3000/api/board");
+        setBoard(response.data.board);
+      } catch (error) {
+        console.log(error);
+      }
     }
     loadBoard();
   }, []);
 
   useEffect(() => {
     async function loadShips() {
-      const response = await fetch("http://localhost:3000/api/ships");
-      const data = await response.json();
-      setShipsState(data);
+      try {
+        const response = await axios.get("http://localhost:3000/api/ships");
+        setShipsState(response.data);
+      } catch (error) {
+        console.log(error);
+      }
     }
     loadShips();
   }, []);
+
+  useEffect(() => {
+    async function loadOpponentBoard() {
+      try {
+        const response = await axios.get("http://localhost:3000/api/randomize");
+        setOppBoard(response.data.board);
+        console.log(response.data.board);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    loadOpponentBoard();
+  }, []);
+
+  async function reset() {
+    try {
+      const response = await axios.post("http://localhost:3000/api/reset");
+      setBoard(response.data.board);
+      setShipsState(response.data.ships);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   function handleDragStart(event) {
     setActiveId(event.active.id);
@@ -64,9 +97,15 @@ export default function Board() {
     const y = Math.floor(dropCellId / 10);
 
     if (orientation === "horizontal") {
-      if (x + shipSize > 10) return;
+      if (x + shipSize > 10) {
+        setPreviewCells([]);
+        return;
+      }
     } else {
-      if (y + shipSize > 10) return;
+      if (y + shipSize > 10) {
+        setPreviewCells([]);
+        return;
+      }
     }
     let newCoordinates = [];
     for (let i = 0; i < shipSize; i++) {
@@ -85,7 +124,10 @@ export default function Board() {
       );
     });
 
-    if (isOverlapping) return;
+    if (isOverlapping) {
+      setPreviewCells([]);
+      return;
+    }
 
     setShipsState((prevShips) =>
       prevShips.map((ship) => {
@@ -114,6 +156,8 @@ export default function Board() {
         return cell;
       }),
     );
+
+    setPreviewCells([]);
   }
 
   function getShipContent(cellId) {
@@ -170,20 +214,50 @@ export default function Board() {
     };
   }, [activeId]);
 
-  useEffect(() => {
-    let boardJson = JSON.stringify(board);
+  // useEffect(() => {
+  //   axios
+  //     .post("http://localhost:3000/api/board", board, {
+  //       headers: { "Content-Type": "application/json" },
+  //     })
+  //     .catch(console.error);
+  // }, [board]);
 
-    fetch("http://localhost:3000/api/board", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: boardJson,
-    });
-  }, [board]);
+  async function saveBoard() {
+    await axios.post("http://localhost:3000/api/board", board);
+  }
+
+  const activeShip = shipsState.find((s) => s.name === activeId);
+
+  function handleDragOver(event) {
+    const { active, over } = event;
+    if (!over) {
+      setPreviewCells([]);
+      return;
+    }
+
+    const activeShip = shipsState.find((s) => s.name === active.id);
+    if (!activeShip) return;
+
+    const dropCellId = parseInt(over.id);
+
+    let cells = [];
+
+    for (let i = 0; i < activeShip.size; i++) {
+      if (activeShip.orientation === "horizontal") {
+        cells.push(dropCellId + i);
+      } else {
+        cells.push(dropCellId + i * 10);
+      }
+    }
+    setPreviewCells(cells);
+  }
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+    >
       <section className={css.section}>
         <div className={css.sectionContainer}>
           <div className={css.content}>
@@ -213,7 +287,12 @@ export default function Board() {
 
                   <div className={css.grid}>
                     {board.map((item) => (
-                      <DroppableCell key={item.id} id={item.id}>
+                      <DroppableCell
+                        key={item.id}
+                        id={item.id}
+                        ship={activeShip}
+                        previewCells={previewCells}
+                      >
                         {getShipContent(item.id)}
                       </DroppableCell>
                     ))}
@@ -255,7 +334,7 @@ export default function Board() {
                     ))}
                   </div>
                   <div className={css.grid}>
-                    {board.map((item) => (
+                    {oppBoard.map((item) => (
                       <div
                         key={item.id}
                         className={`${css.cell} ${css.cellEnemy}`}
@@ -291,7 +370,9 @@ export default function Board() {
             </div>
           </div>
 
-          <button className={css.buttonPlay}> Play </button>
+          <button className={css.buttonPlay} onClick={saveBoard}>
+            Play
+          </button>
         </div>
       </section>
     </DndContext>

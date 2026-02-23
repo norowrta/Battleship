@@ -1,13 +1,13 @@
 import { useDroppable } from "@dnd-kit/core";
 import css from "./battleships.module.css";
 
-export default function DroppableCell({ id, children }) {
-  const { isOver, setNodeRef } = useDroppable({
+export default function DroppableCell({ id, children, previewCells }) {
+  const { setNodeRef } = useDroppable({
     id: id,
   });
+
   const style = {
-    backgroundColor: isOver ? "#61c6ff" : undefined,
-    opacity: isOver ? 0.5 : 1,
+    backgroundColor: previewCells.includes(id) ? "#61c6ff" : undefined,
   };
 
   return (
