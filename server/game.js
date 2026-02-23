@@ -1,35 +1,38 @@
 const shipsTemplate = require("./ships.json");
 
-let x = 10;
-let y = 10;
-const size = x * y;
+const X_SIZE = 10;
+const Y_SIZE = 10;
+const TOTAL_CELLS = X_SIZE * Y_SIZE;
 
-let ships = deepClone(shipsTemplate).map((s) => ({
-  ...s,
-  placed: false,
-  coordinates: [],
-  orientation: "horizontal",
-}));
+let gameState = {
+  phase: "setup", // "setup", "playing", "finished";
+  turn: "player", // "player", "bot"
+  winner: null,
+};
 
+let ships = initializeShips();
 let board = createBoard();
 
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+let botBoard = [];
+let botShips = [];
+
+function initializeShips() {
+  return structuredClone(shipsTemplate).map((s) => ({
+    ...s,
+    placed: false,
+    coordinates: [],
+    orientation: "horizontal",
+  }));
 }
 
 function createBoard() {
-  const result = [];
-
-  for (let i = 0; i < size; i++) {
-    result.push({
-      id: i,
-      x: i % x,
-      y: Math.floor(i / x),
-      hasShip: false,
-      status: "empty",
-    });
-  }
-  return result;
+  return Array.from({ length: TOTAL_CELLS }, (_, i) => ({
+    id: i,
+    x: i % X_SIZE,
+    y: Math.floor(i / X_SIZE),
+    hasShip: false,
+    status: "empty",
+  }));
 }
 
 function getShips() {
@@ -37,43 +40,31 @@ function getShips() {
 }
 
 function getBoard() {
-  if (board.length < 1) {
-    board = createBoard();
-  }
+  if (board.length === 0) board = createBoard();
   return board;
 }
 
 function setBoard(newBoard) {
   board = newBoard;
-  console.log(newBoard);
 }
 
 function resetBoard() {
   board = createBoard();
 }
-
 function resetShips() {
-  ships = deepClone(shipsTemplate).map((s) => ({
-    ...s,
-    placed: false,
-    coordinates: [],
-    orientation: "horizontal",
-  }));
+  ships = initializeShips();
+}
+
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function placeShipsRandomly() {
+  let localBoard = createBoard();
+  let localShips = initializeShips();
   let occupied = new Set();
 
-  const localBoard = createBoard();
-
-  const localShips = deepClone(shipsTemplate).map((s) => ({
-    ...s,
-    placed: false,
-    coordinates: [],
-    orientation: "horizontal",
-  }));
-
-  const maxAttemptsPerShip = 1000;
+  const MAX_ATTEMPTS = 1000;
   let shipIndex = 0;
 
   while (shipIndex < localShips.length) {
@@ -81,40 +72,26 @@ function placeShipsRandomly() {
     let placed = false;
     let attempts = 0;
 
-    while (!placed && attempts < maxAttemptsPerShip) {
+    while (!placed && attempts < MAX_ATTEMPTS) {
       attempts++;
-
       const orientation = Math.random() < 0.5 ? "horizontal" : "vertical";
 
       const startX =
         orientation === "horizontal"
-          ? randomNumber(0, x - ship.size)
-          : randomNumber(0, x - 1);
-
+          ? randomNumber(0, X_SIZE - ship.size)
+          : randomNumber(0, X_SIZE - 1);
       const startY =
         orientation === "vertical"
-          ? randomNumber(0, y - ship.size)
-          : randomNumber(0, y - 1);
+          ? randomNumber(0, Y_SIZE - ship.size)
+          : randomNumber(0, Y_SIZE - 1);
 
-      let startId = startY * x + startX;
+      const startId = startY * X_SIZE + startX;
 
-      let newCoords = [];
+      const newCoords = Array.from({ length: ship.size }, (_, i) =>
+        orientation === "horizontal" ? startId + i : startId + i * X_SIZE,
+      );
 
-      if (orientation === "horizontal") {
-        for (let i = 0; i < ship.size; i++) {
-          let cellId = startId + i;
-          newCoords.push(cellId);
-        }
-      } else if (orientation === "vertical") {
-        for (let i = 0; i < ship.size; i++) {
-          let cellId = startId + i * x;
-          newCoords.push(cellId);
-        }
-      }
-
-      if (newCoords.some((id) => occupied.has(id))) {
-        continue;
-      }
+      if (newCoords.some((id) => occupied.has(id))) continue;
 
       ship.coordinates = newCoords;
       ship.orientation = orientation;
@@ -123,38 +100,70 @@ function placeShipsRandomly() {
       newCoords.forEach((id) => {
         localBoard[id].hasShip = true;
         localBoard[id].status = "ship";
+        occupied.add(id);
       });
-
-      newCoords.forEach((id) => occupied.add(id));
 
       placed = true;
       shipIndex++;
     }
+
     if (!placed) {
       occupied.clear();
       shipIndex = 0;
-
-      localShips.forEach((s) => {
-        s.placed = false;
-        s.coordinates = [];
-        s.orientation = "horizontal";
-      });
-
-      localBoard.forEach((c) => {
-        c.hasShip = false;
-        c.status = "empty";
-      });
-
-      continue;
+      localShips = initializeShips();
+      localBoard = createBoard();
     }
   }
-  console.log(localBoard, localShips);
 
   return { board: localBoard, ships: localShips };
 }
 
-function randomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function startGame() {
+  let botData = placeShipsRandomly();
+  botBoard = botData.board;
+  botShips = botData.ships;
+  gameState.phase = "playing";
+  gameState.turn = "player";
+  return gameState;
+}
+
+function playerShoot(cellId) {
+  if (gameState.phase !== "playing" || gameState.turn !== "player") {
+    return null;
+  }
+
+  const cell = botBoard.find((c) => c.id === cellId);
+
+  if (cell.status === "hit" || cell.status === "miss") {
+    return nul;
+  }
+
+  if (cell.hasShip) {
+    cell.status = "hit";
+  } else {
+    cell.status = "miss";
+  }
+
+  gameState.turn = "bot";
+
+  return { updatedCell: cell, gameState };
+}
+
+function botShoot() {
+  const availableCells = board.filter((cell) => {
+    return cell.status === "empty" || cell.status === "ship";
+  });
+
+  const randomCellNumber = randomNumber(0, availableCells.length - 1);
+  const targetCell = availableCells[randomCellNumber];
+
+  if (targetCell.hasShip) {
+    targetCell.status = "hit";
+  } else {
+    targetCell.status = "miss";
+  }
+  gameState.turn = "player";
+  return { updatedCell: targetCell, gameState };
 }
 
 module.exports = {
@@ -164,4 +173,7 @@ module.exports = {
   placeShipsRandomly,
   resetBoard,
   resetShips,
+  startGame,
+  playerShoot,
+  botShoot,
 };

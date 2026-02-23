@@ -1,73 +1,94 @@
 import { useState, useEffect } from "react";
 import { DndContext } from "@dnd-kit/core";
+import axios from "axios";
 import DraggableShip from "./DraggableShip.jsx";
 import DroppableCell from "./DroppableCell.jsx";
-import css from "./battleships.module.css";
 import Icon from "../Icon";
-import axios from "axios";
-
-// import ships from "../../../../../server/ships.json";
-
-// const size = 10 * 10;
+import css from "./battleships.module.css";
 
 const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-let player;
+const API_URL = "http://localhost:3000/api";
 
-function addClass(e) {
-  e.preventDefault();
-  if (e.target.tagName == "A") {
-    e.target.classList.toggle(`${css.destroyedShip}`);
-  }
+function calculateCoordinates(startId, size, orientation) {
+  return Array.from({ length: size }, (_, i) =>
+    orientation === "horizontal" ? startId + i : startId + i * 10,
+  );
+}
+
+function generateEmptyBoard() {
+  return Array.from({ length: 100 }, (_, i) => ({
+    id: i,
+    status: "empty",
+    hasShip: false,
+  }));
 }
 
 export default function Board() {
   const [board, setBoard] = useState([]);
   const [shipsState, setShipsState] = useState([]);
+  const [oppBoard, setOppBoard] = useState(generateEmptyBoard());
+
   const [activeId, setActiveId] = useState(null);
   const [previewCells, setPreviewCells] = useState([]);
-  const [oppBoard, setOppBoard] = useState([]);
+  const [destroyedShips, setDestroyedShips] = useState([]);
+  const [gamePhase, setGamePhase] = useState(false);
+
+  let player = 1;
 
   useEffect(() => {
-    async function loadBoard() {
+    async function fetchInitialData() {
       try {
-        const response = await axios.get("http://localhost:3000/api/board");
-        setBoard(response.data.board);
+        const [boardRes, shipsRes] = await Promise.all([
+          axios.get(`${API_URL}/board`),
+          axios.get(`${API_URL}/ships`),
+          // axios.get(`${API_URL}/randomize`),
+        ]);
+        setBoard(boardRes.data.board);
+        setShipsState(shipsRes.data);
+        // setOppBoard(oppRes.data.board);
       } catch (error) {
-        console.log(error);
+        console.error("Error:", error);
       }
     }
-    loadBoard();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
-    async function loadShips() {
-      try {
-        const response = await axios.get("http://localhost:3000/api/ships");
-        setShipsState(response.data);
-      } catch (error) {
-        console.log(error);
+    function handleKeyDown(event) {
+      if (event.code === "Space" && activeId) {
+        event.preventDefault();
+        setShipsState((prevShips) =>
+          prevShips.map((ship) =>
+            ship.name === activeId
+              ? {
+                  ...ship,
+                  orientation:
+                    ship.orientation === "horizontal"
+                      ? "vertical"
+                      : "horizontal",
+                }
+              : ship,
+          ),
+        );
       }
     }
-    loadShips();
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeId]);
 
-  useEffect(() => {
-    async function loadOpponentBoard() {
-      try {
-        const response = await axios.get("http://localhost:3000/api/randomize");
-        setOppBoard(response.data.board);
-        console.log(response.data.board);
-      } catch (error) {
-        console.log(error);
-      }
+  async function fetchOppBoard() {
+    try {
+      const respons = await axios.get(`${API_URL}/randomize`);
+      setOppBoard(respons.data.board);
+    } catch (error) {
+      console.error("Error:", error);
     }
-    loadOpponentBoard();
-  }, []);
+  }
 
   async function reset() {
     try {
-      const response = await axios.post("http://localhost:3000/api/reset");
+      const response = await axios.post(`${API_URL}/reset`);
       setBoard(response.data.board);
       setShipsState(response.data.ships);
     } catch (err) {
@@ -75,71 +96,75 @@ export default function Board() {
     }
   }
 
+  async function startGame() {
+    const allPlaced = shipsState.every((ship) => ship.placed === true);
+    if (!allPlaced) {
+      alert("Please place all ships!");
+      return;
+    }
+
+    await axios.post(`${API_URL}/board`, board);
+    setGamePhase(true);
+    fetchOppBoard();
+  }
+
   function handleDragStart(event) {
     setActiveId(event.active.id);
   }
 
+  function handleDragOver(event) {
+    const { active, over } = event;
+    if (!over) return setPreviewCells([]);
+
+    const activeShip = shipsState.find((s) => s.name === active.id);
+    if (!activeShip) return;
+
+    const dropCellId = parseInt(over.id);
+    setPreviewCells(
+      calculateCoordinates(dropCellId, activeShip.size, activeShip.orientation),
+    );
+  }
+
   function handleDragEnd(event) {
     const { active, over } = event;
-
     setActiveId(null);
+    setPreviewCells([]);
 
     if (!over) return;
 
     const shipName = active.id;
     const dropCellId = parseInt(over.id);
-
     const currentShip = shipsState.find((s) => s.name === shipName);
-    const shipSize = currentShip.size;
-    const orientation = currentShip.orientation;
 
     const x = dropCellId % 10;
     const y = Math.floor(dropCellId / 10);
 
-    if (orientation === "horizontal") {
-      if (x + shipSize > 10) {
-        setPreviewCells([]);
-        return;
-      }
-    } else {
-      if (y + shipSize > 10) {
-        setPreviewCells([]);
-        return;
-      }
-    }
-    let newCoordinates = [];
-    for (let i = 0; i < shipSize; i++) {
-      if (orientation === "horizontal") {
-        newCoordinates.push(dropCellId + i);
-      } else {
-        newCoordinates.push(dropCellId + i * 10);
-      }
-    }
+    if (currentShip.orientation === "horizontal" && x + currentShip.size > 10)
+      return;
+    if (currentShip.orientation === "vertical" && y + currentShip.size > 10)
+      return;
+
+    const newCoordinates = calculateCoordinates(
+      dropCellId,
+      currentShip.size,
+      currentShip.orientation,
+    );
 
     const isOverlapping = shipsState.some((otherShip) => {
-      if (otherShip.name === shipName) return false;
-      if (!otherShip.placed) return false;
+      if (otherShip.name === shipName || !otherShip.placed) return false;
       return newCoordinates.some((coord) =>
         otherShip.coordinates.includes(coord),
       );
     });
 
-    if (isOverlapping) {
-      setPreviewCells([]);
-      return;
-    }
+    if (isOverlapping) return;
 
-    setShipsState((prevShips) =>
-      prevShips.map((ship) => {
-        if (ship.name === shipName) {
-          return {
-            ...ship,
-            placed: true,
-            coordinates: newCoordinates,
-          };
-        }
-        return ship;
-      }),
+    setShipsState((prev) =>
+      prev.map((ship) =>
+        ship.name === shipName
+          ? { ...ship, placed: true, coordinates: newCoordinates }
+          : ship,
+      ),
     );
 
     setBoard((prevBoard) =>
@@ -148,109 +173,48 @@ export default function Board() {
         const isOldCell =
           currentShip.placed && currentShip.coordinates.includes(cell.id);
 
-        if (isNewCell) {
-          return { ...cell, hasShip: true, status: "ship" };
-        } else if (isOldCell) {
-          return { ...cell, hasShip: false, status: "empty" };
-        }
+        if (isNewCell) return { ...cell, hasShip: true, status: "ship" };
+        if (isOldCell) return { ...cell, hasShip: false, status: "empty" };
         return cell;
       }),
     );
-
-    setPreviewCells([]);
   }
 
   function getShipContent(cellId) {
     const shipAtCell = shipsState.find(
       (ship) => ship.placed && ship.coordinates.includes(cellId),
     );
+    if (!shipAtCell) return null;
 
-    if (shipAtCell) {
-      const indexInShip = shipAtCell.coordinates.indexOf(cellId);
-      let iconName = "boatMiddle";
-      if (indexInShip === 0) iconName = "boatBack";
-      if (indexInShip === shipAtCell.size - 1) iconName = "boatFront";
+    const indexInShip = shipAtCell.coordinates.indexOf(cellId);
+    let iconName = "boatMiddle";
+    if (indexInShip === 0) iconName = "boatBack";
+    if (indexInShip === shipAtCell.size - 1) iconName = "boatFront";
 
-      const rotationAngle =
-        shipAtCell.orientation === "vertical" ? "180deg" : "90deg";
+    const rotationAngle =
+      shipAtCell.orientation === "vertical" ? "180deg" : "90deg";
 
-      return (
-        <Icon
-          name={iconName}
-          width="32px"
-          height="32px"
-          className={css.cellIcon}
-          style={{
-            transform: `rotate(${rotationAngle})`,
-            display: "block",
-          }}
-        />
-      );
-    }
-    return null;
+    return (
+      <Icon
+        name={iconName}
+        width="32px"
+        height="32px"
+        className={css.cellIcon}
+        style={{ transform: `rotate(${rotationAngle})`, display: "block" }}
+      />
+    );
   }
 
-  useEffect(() => {
-    function handleKeyDown(event) {
-      if (event.code === "Space" && activeId) {
-        event.preventDefault();
-
-        setShipsState((prevShips) =>
-          prevShips.map((ship) => {
-            if (ship.name === activeId) {
-              const newOrientation =
-                ship.orientation === "horizontal" ? "vertical" : "horizontal";
-              return { ...ship, orientation: newOrientation };
-            }
-            return ship;
-          }),
-        );
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [activeId]);
-
-  // useEffect(() => {
-  //   axios
-  //     .post("http://localhost:3000/api/board", board, {
-  //       headers: { "Content-Type": "application/json" },
-  //     })
-  //     .catch(console.error);
-  // }, [board]);
-
-  async function saveBoard() {
-    await axios.post("http://localhost:3000/api/board", board);
+  function toggleDestroyed(e, shipType) {
+    e.preventDefault();
+    setDestroyedShips((prev) =>
+      prev.includes(shipType)
+        ? prev.filter((s) => s !== shipType)
+        : [...prev, shipType],
+    );
   }
 
-  const activeShip = shipsState.find((s) => s.name === activeId);
-
-  function handleDragOver(event) {
-    const { active, over } = event;
-    if (!over) {
-      setPreviewCells([]);
-      return;
-    }
-
-    const activeShip = shipsState.find((s) => s.name === active.id);
-    if (!activeShip) return;
-
-    const dropCellId = parseInt(over.id);
-
-    let cells = [];
-
-    for (let i = 0; i < activeShip.size; i++) {
-      if (activeShip.orientation === "horizontal") {
-        cells.push(dropCellId + i);
-      } else {
-        cells.push(dropCellId + i * 10);
-      }
-    }
-    setPreviewCells(cells);
-  }
+  // const activeShip = shipsState.find((s) => s.name === activeId);
 
   return (
     <DndContext
@@ -268,7 +232,6 @@ export default function Board() {
                 >
                   <span className={css.playerTxt}>Your fleet</span>
                 </div>
-
                 <div className={css.wrapper}>
                   <div className={css.letters}>
                     {letters.map((letter) => (
@@ -284,13 +247,11 @@ export default function Board() {
                       </div>
                     ))}
                   </div>
-
                   <div className={css.grid}>
                     {board.map((item) => (
                       <DroppableCell
                         key={item.id}
                         id={item.id}
-                        ship={activeShip}
                         previewCells={previewCells}
                       >
                         {getShipContent(item.id)}
@@ -298,17 +259,18 @@ export default function Board() {
                     ))}
                   </div>
                 </div>
-
-                <div className={css.shipyard}>
-                  <h3 className={css.shipyardTitle}>Shipyard</h3>
-                  <div className={css.shipyardShips}>
-                    {shipsState.map((ship) => {
-                      if (ship.placed) return null;
-
-                      return <DraggableShip key={ship.name} ship={ship} />;
-                    })}
+                {!gamePhase && (
+                  <div className={css.shipyard}>
+                    <h3 className={css.shipyardTitle}>Shipyard</h3>
+                    <div className={css.shipyardShips}>
+                      {shipsState.map((ship) =>
+                        !ship.placed ? (
+                          <DraggableShip key={ship.name} ship={ship} />
+                        ) : null,
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className={css.vl}></div>
@@ -317,7 +279,6 @@ export default function Board() {
                 <div className={css.playersWrapper}>
                   <span className={css.playerTxt}>Opponent</span>
                 </div>
-
                 <div className={css.wrapper}>
                   <div className={css.letters}>
                     {letters.map((letter) => (
@@ -342,37 +303,35 @@ export default function Board() {
                     ))}
                   </div>
                 </div>
-
                 <div className={css.shipyard}>
-                  <h3 className={css.shipyardTitle}>graveyard</h3>
-                  <div
-                    onClick={(e) => addClass(e)}
-                    className={css.graveyardShips}
-                  >
-                    <a href="#" className={css.shipyardDestroyed}>
-                      Battleship (4)
-                    </a>
-                    <a href="#" className={css.shipyardDestroyed}>
-                      Submarine (3)
-                    </a>
-                    <a href="#" className={css.shipyardDestroyed}>
-                      Cruiser (2)
-                    </a>
-                    <a href="#" className={css.shipyardDestroyed}>
-                      Aircraft Carrier (5)
-                    </a>
-                    <a href="#" className={css.shipyardDestroyed}>
-                      Destroyer (3)
-                    </a>
+                  <h3 className={css.shipyardTitle}>Graveyard</h3>
+                  <div className={css.graveyardShips}>
+                    {[
+                      "Battleship (4)",
+                      "Submarine (3)",
+                      "Cruiser (2)",
+                      "Aircraft Carrier (5)",
+                      "Destroyer (3)",
+                    ].map((shipName) => (
+                      <a
+                        key={shipName}
+                        href="#"
+                        onClick={(e) => toggleDestroyed(e, shipName)}
+                        className={`${css.shipyardDestroyed} ${destroyedShips.includes(shipName) ? css.destroyedShip : ""}`}
+                      >
+                        {shipName}
+                      </a>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <button className={css.buttonPlay} onClick={saveBoard}>
-            Play
-          </button>
+          {!gamePhase && (
+            <button className={css.buttonPlay} onClick={startGame}>
+              Play
+            </button>
+          )}
         </div>
       </section>
     </DndContext>

@@ -4,23 +4,18 @@ import Icon from "../Icon";
 import css from "./battleships.module.css";
 
 function getSegments(size) {
-  let segments = [];
-  for (let i = 0; i < size; i++) {
-    if (i === 0) segments.push("back");
-    else if (i === size - 1) segments.push("front");
-    else segments.push("middle");
-  }
-  return segments;
+  return Array.from({ length: size }, (_, i) => {
+    if (i === 0) return "back";
+    if (i === size - 1) return "front";
+    return "middle";
+  });
 }
 
 export default function DraggableShip({ ship }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: ship.name,
-      data: {
-        size: ship.size,
-        orientation: ship.orientation,
-      },
+      data: { size: ship.size, orientation: ship.orientation },
     });
 
   const style = {
@@ -31,8 +26,8 @@ export default function DraggableShip({ ship }) {
     display: "flex",
     flexDirection: ship.orientation === "vertical" ? "column" : "row",
   };
-  const segments = getSegments(ship.size);
 
+  const segments = getSegments(ship.size);
   const rotationAngle = ship.orientation === "vertical" ? "180deg" : "90deg";
 
   return (
