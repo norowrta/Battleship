@@ -4,6 +4,7 @@
  - Add finish game logik (reset button, display winner)
  - Add graveyard logik
  - Add better boat placing logik
+ - Add wins/looses count
 
  - Add multiplayer
 
