@@ -27,8 +27,7 @@ app.get("/api/randomize", (req, res) => {
 });
 
 app.post("/api/reset", (req, res) => {
-  game.resetBoard();
-  game.resetShips();
+  fullReset();
   res.json({ board: game.getBoard(), ships: game.getShips() });
 });
 
@@ -50,10 +49,17 @@ app.post("/api/shoot", (req, res) => {
     const botResult = game.bot();
     res.json({
       playerShot: playerResult.updatedCell,
+      playerSunkShip: playerResult.sunkShip,
       botShot: botResult.updatedCell,
+      botSunkShip: botResult.sunkShip,
       gameState: botResult.gameState,
     });
   }, 500);
+});
+
+app.post("/api/ships", (req, res) => {
+  game.setShips(req.body);
+  res.json({ ok: true });
 });
 
 app.listen(PORT, () => {

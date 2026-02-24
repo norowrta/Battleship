@@ -54,15 +54,46 @@ function setBoard(newBoard) {
   board = newBoard;
 }
 
-function resetBoard() {
+function fullReset() {
   board = createBoard();
-}
-function resetShips() {
   ships = initializeShips();
+
+  botBoard = [];
+  botShips = [];
+  botState = {
+    tried: new Set(),
+    hits: [],
+    queue: [],
+  };
+
+  gameState = {
+    phase: "setup",
+    turn: "player",
+    winner: null,
+  };
+
+  return { board, ships };
 }
 
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getSurroundingCells(id) {
+  const x = id % 10;
+  const y = Math.floor(id / 10);
+  const surrounding = [];
+
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+        surrounding.push(ny * 10 + nx);
+      }
+    }
+  }
+  return surrounding;
 }
 
 function placeShipsRandomly() {
@@ -103,10 +134,18 @@ function placeShipsRandomly() {
       ship.orientation = orientation;
       ship.placed = true;
 
+      // newCoords.forEach((id) => {
+      //   localBoard[id].hasShip = true;
+      //   localBoard[id].status = "ship";
+      //   occupied.add(id);
+      // });
+
       newCoords.forEach((id) => {
         localBoard[id].hasShip = true;
         localBoard[id].status = "ship";
-        occupied.add(id);
+
+        const halo = getSurroundingCells(id);
+        halo.forEach((haloId) => occupied.add(haloId));
       });
 
       placed = true;
@@ -321,15 +360,19 @@ function checkWin(shipList) {
   return shipList.every((s) => s.sunk);
 }
 
+function setShips(newShips) {
+  ships = newShips;
+}
+
 module.exports = {
   getShips,
   getBoard,
   setBoard,
   placeShipsRandomly,
-  resetBoard,
-  resetShips,
+  fullReset,
   startGame,
   playerShoot,
   bot,
   botShoot,
+  setShips,
 };

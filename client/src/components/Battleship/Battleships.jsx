@@ -33,25 +33,13 @@ export default function Board() {
   const [previewCells, setPreviewCells] = useState([]);
   const [destroyedShips, setDestroyedShips] = useState([]);
   const [gamePhase, setGamePhase] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [isBotThinking, setIsBotThinking] = useState(false);
 
   let player = 1;
 
   useEffect(() => {
-    async function fetchInitialData() {
-      try {
-        const [boardRes, shipsRes] = await Promise.all([
-          axios.get(`${API_URL}/board`),
-          axios.get(`${API_URL}/ships`),
-          // axios.get(`${API_URL}/randomize`),
-        ]);
-        setBoard(boardRes.data.board);
-        setShipsState(shipsRes.data);
-        // setOppBoard(oppRes.data.board);
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    }
-    fetchInitialData();
+    reset();
   }, []);
 
   useEffect(() => {
@@ -77,15 +65,6 @@ export default function Board() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeId]);
 
-  // async function fetchOppBoard() {
-  //   try {
-  //     const respons = await axios.get(`${API_URL}/randomize`);
-  //     setOppBoard(respons.data.board);
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //   }
-  // }
-
   async function startGame() {
     const allPlaced = shipsState.every((ship) => ship.placed === true);
     if (!allPlaced) {
@@ -94,6 +73,7 @@ export default function Board() {
     }
 
     await axios.post(`${API_URL}/board`, board);
+    await axios.post(`${API_URL}/ships`, shipsState);
     await axios.post(`${API_URL}/start`);
     setGamePhase(true);
   }
@@ -106,6 +86,23 @@ export default function Board() {
     } catch (err) {
       console.error(err);
     }
+  }
+
+  function getSurroundingCells(id) {
+    const x = id % 10;
+    const y = Math.floor(id / 10);
+    const surrounding = [];
+
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && nx < 10 && ny >= 0 && ny < 10) {
+          surrounding.push(ny * 10 + nx);
+        }
+      }
+    }
+    return surrounding;
   }
 
   function handleDragStart(event) {
@@ -152,9 +149,11 @@ export default function Board() {
 
     const isOverlapping = shipsState.some((otherShip) => {
       if (otherShip.name === shipName || !otherShip.placed) return false;
-      return newCoordinates.some((coord) =>
-        otherShip.coordinates.includes(coord),
-      );
+
+      return newCoordinates.some((coord) => {
+        const halo = getSurroundingCells(coord);
+        return halo.some((haloId) => otherShip.coordinates.includes(haloId));
+      });
     });
 
     if (isOverlapping) return;
@@ -180,16 +179,23 @@ export default function Board() {
     );
   }
 
-  function getShipContent(cellId) {
+  function getShipContent(cell) {
     const shipAtCell = shipsState.find(
-      (ship) => ship.placed && ship.coordinates.includes(cellId),
+      (ship) => ship.placed && ship.coordinates.includes(cell.id),
     );
     if (!shipAtCell) return null;
 
-    const indexInShip = shipAtCell.coordinates.indexOf(cellId);
+    const indexInShip = shipAtCell.coordinates.indexOf(cell.id);
+
     let iconName = "boatMiddle";
     if (indexInShip === 0) iconName = "boatBack";
     if (indexInShip === shipAtCell.size - 1) iconName = "boatFront";
+
+    if (cell.status === "hit") {
+      if (iconName === "boatMiddle") iconName = "boatMiddleHit";
+      if (iconName === "boatBack") iconName = "boatBackHit";
+      if (iconName === "boatFront") iconName = "boatFrontHit";
+    }
 
     const rotationAngle =
       shipAtCell.orientation === "vertical" ? "180deg" : "90deg";
@@ -200,35 +206,69 @@ export default function Board() {
         width="32px"
         height="32px"
         className={css.cellIcon}
-        style={{ transform: `rotate(${rotationAngle})`, display: "block" }}
+        style={{
+          transform: `rotate(${rotationAngle})`,
+          display: "block",
+        }}
       />
     );
   }
 
-  function toggleDestroyed(e, shipType) {
-    e.preventDefault();
-    setDestroyedShips((prev) =>
-      prev.includes(shipType)
-        ? prev.filter((s) => s !== shipType)
-        : [...prev, shipType],
-    );
-  }
-
   async function handleShoot(cellId) {
-    if (!gamePhase) return;
+    if (!gamePhase || isBotThinking) return;
+
+    setIsBotThinking(true);
 
     try {
       const response = await axios.post(`${API_URL}/shoot`, { cellId });
+      const { playerShot, botShot, gameState, playerSunkShip } = response.data;
+      if (playerSunkShip) {
+        const shipString = `${playerSunkShip.name} (${playerSunkShip.size})`;
 
-      const { playerShot, botShot, gameState } = response.data;
+        setDestroyedShips((prev) => [...prev, shipString]);
+      }
 
       setOppBoard((prev) =>
         prev.map((c) => (c.id === playerShot.id ? playerShot : c)),
       );
 
+      setOppBoard((prev) =>
+        prev.map((c) => (c.id === playerShot.id ? playerShot : c)),
+      );
       setBoard((prev) => prev.map((c) => (c.id === botShot.id ? botShot : c)));
+
+      if (gameState && gameState.phase === "finished") {
+        setTimeout(() => {
+          if (gameState.winner === "player") {
+            alert("You won!");
+          } else {
+            alert("Bot won!");
+          }
+          setGamePhase(false);
+          setIsGameOver(true);
+        }, 300);
+      }
     } catch (error) {
       console.error("Error", error);
+    } finally {
+      setIsBotThinking(false);
+    }
+  }
+
+  async function handleRestart() {
+    try {
+      const response = await axios.post(`${API_URL}/reset`);
+
+      setBoard(response.data.board);
+      setShipsState(response.data.ships);
+
+      setOppBoard(generateEmptyBoard());
+      setDestroyedShips([]);
+
+      setIsGameOver(false);
+      setGamePhase(false);
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -270,7 +310,14 @@ export default function Board() {
                         id={item.id}
                         previewCells={previewCells}
                       >
-                        {getShipContent(item.id)}
+                        {getShipContent(item)}
+                        {item.status === "miss" && (
+                          <div
+                            className={`${css.cellBotMiss} ${css.popAnimation} `}
+                          >
+                            <Icon name="botMiss" width="32px" height="32px" />
+                          </div>
+                        )}
                       </DroppableCell>
                     ))}
                   </div>
@@ -317,8 +364,22 @@ export default function Board() {
                         className={`${css.cell} ${css.cellEnemy}`}
                         onClick={() => handleShoot(item.id)}
                       >
-                        {item.status === "hit" && <span>X</span>}
-                        {item.status === "miss" && <span>•</span>}
+                        {item.status === "hit" && (
+                          <Icon
+                            name="hit"
+                            width="32px"
+                            height="32px"
+                            className={`${css.cellIcon} ${css.popAnimation} `}
+                          />
+                        )}
+                        {item.status === "miss" && (
+                          <Icon
+                            name="miss"
+                            width="32px"
+                            height="32px"
+                            className={`${css.cellIcon} ${css.popAnimation} `}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -336,7 +397,6 @@ export default function Board() {
                       <a
                         key={shipName}
                         href="#"
-                        onClick={(e) => toggleDestroyed(e, shipName)}
                         className={`${css.shipyardDestroyed} ${destroyedShips.includes(shipName) ? css.destroyedShip : ""}`}
                       >
                         {shipName}
@@ -347,9 +407,15 @@ export default function Board() {
               </div>
             </div>
           </div>
-          {!gamePhase && (
+          {!gamePhase && !isGameOver && (
             <button className={css.buttonPlay} onClick={startGame}>
               Play
+            </button>
+          )}
+
+          {isGameOver && (
+            <button className={css.buttonPlay} onClick={handleRestart}>
+              Restart
             </button>
           )}
         </div>

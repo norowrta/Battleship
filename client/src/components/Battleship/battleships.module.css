@@ -116,6 +116,8 @@
   background: #61c5ff4d;
   border-radius: 4px;
   transition: background-color 0.2s ease-in-out;
+
+  position: relative;
 }
 
 .cellEnemy {
@@ -181,18 +183,12 @@
   width: fit-content;
 
   transition: all 0.2s ease-in-out;
-}
-
-.shipyardDestroyed:hover {
-   color: rgba(53, 56, 57, 0.75);
+  cursor: default;
 }
 
 .destroyedShip {
   color: #ff0055;
   text-decoration-line: line-through;
-}
-.destroyedShip:hover {
-  color: #ff0055;
 }
 .shipyardShips {
   display: flex;
@@ -242,4 +238,28 @@
 }
 .buttonPlay:hover {
   background-color: #0351be;
+}
+
+.cellBotMiss {
+  position: absolute;
+  z-index: 10;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.popAnimation {
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
