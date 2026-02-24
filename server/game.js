@@ -16,6 +16,12 @@ let board = createBoard();
 let botBoard = [];
 let botShips = [];
 
+let botState = {
+  tried: new Set(),
+  hits: [],
+  queue: [],
+};
+
 function initializeShips() {
   return structuredClone(shipsTemplate).map((s) => ({
     ...s,
@@ -119,12 +125,36 @@ function placeShipsRandomly() {
 }
 
 function startGame() {
-  let botData = placeShipsRandomly();
+  const botData = placeShipsRandomly();
   botBoard = botData.board;
   botShips = botData.ships;
-  gameState.phase = "playing";
-  gameState.turn = "player";
+
+  gameState = {
+    phase: "playing",
+    turn: "player",
+    winner: null,
+  };
+
+  botState = {
+    tried: new Set(),
+    hits: [],
+    queue: [],
+  };
+
   return gameState;
+}
+
+function registerHitOnShip(cellId, shipList) {
+  const ship = shipList.find((s) => s.coordinates.includes(cellId));
+  if (!ship) return null;
+
+  ship.hitCount = (ship.hitCount || 0) + 1;
+
+  if (ship.hitCount === ship.size) {
+    ship.sunk = true;
+  }
+
+  return ship;
 }
 
 function playerShoot(cellId) {
@@ -133,37 +163,163 @@ function playerShoot(cellId) {
   }
 
   const cell = botBoard.find((c) => c.id === cellId);
+  if (!cell) return null;
 
   if (cell.status === "hit" || cell.status === "miss") {
-    return nul;
+    return null;
   }
+
+  let sunkShip = null;
 
   if (cell.hasShip) {
     cell.status = "hit";
+
+    const ship = registerHitOnShip(cell.id, botShips);
+
+    if (ship && ship.sunk) {
+      sunkShip = ship;
+    }
+
+    if (checkWin(botShips)) {
+      gameState.phase = "finished";
+      gameState.winner = "player";
+
+      return {
+        updatedCell: cell,
+        gameState,
+        hit: true,
+        sunkShip,
+        gameFinished: true,
+      };
+    }
   } else {
     cell.status = "miss";
   }
 
   gameState.turn = "bot";
 
-  return { updatedCell: cell, gameState };
+  return {
+    updatedCell: cell,
+    gameState,
+    hit: cell.status === "hit",
+    sunkShip,
+    gameFinished: false,
+  };
 }
 
-function botShoot() {
-  const availableCells = board.filter((cell) => {
-    return cell.status === "empty" || cell.status === "ship";
-  });
+function bot() {
+  let targetCell;
 
-  const randomCellNumber = randomNumber(0, availableCells.length - 1);
-  const targetCell = availableCells[randomCellNumber];
+  if (botState.queue.length > 0) {
+    const nextId = botState.queue.shift();
+    if (botState.tried.has(nextId)) {
+      for (let i = 0; i < botState.queue.length; i++) {
+        
+      }
+    }
+
+    targetCell = board[nextId];
+  } else {
+    const availableCells = board.filter(
+      (c) =>
+        !botState.tried.has(c.id) &&
+        (c.status === "empty" || c.status === "ship"),
+    );
+
+    const randomIndex = randomNumber(0, availableCells.length - 1);
+    targetCell = availableCells[randomIndex];
+  }
+
+  return botShoot(targetCell);
+}
+
+function botShoot(targetCell) {
+  if (!targetCell) return null;
+
+  botState.tried.add(targetCell.id);
+
+  let sunkShip = null;
 
   if (targetCell.hasShip) {
     targetCell.status = "hit";
-  } else {
-    targetCell.status = "miss";
+
+    const ship = registerHitOnShip(targetCell.id, ships);
+
+    if (ship && ship.sunk) {
+      sunkShip = ship;
+      botState.queue = [];
+    } else {
+      const ns = neighbors(targetCell.id);
+      for (const id of ns) {
+        if (!botState.tried.has(id) && !botState.queue.includes(id)) {
+          botState.queue.push(id);
+        }
+      }
+    }
+
+    if (checkWin(ships)) {
+      gameState.phase = "finished";
+      gameState.winner = "bot";
+      return {
+        hit: true,
+        miss: false,
+        cell: targetCell,
+        sunkShip,
+        gameFinished: true,
+        gameState,
+      };
+    }
+
+    gameState.turn = "player";
+    return {
+      hit: true,
+      miss: false,
+      cell: targetCell,
+      sunkShip,
+      gameFinished: false,
+      gameState,
+    };
   }
+
+  targetCell.status = "miss";
   gameState.turn = "player";
-  return { updatedCell: targetCell, gameState };
+
+  return {
+    hit: false,
+    miss: true,
+    cell: targetCell,
+    gameFinished: false,
+    gameState,
+  };
+}
+
+function xyFromId(id) {
+  const x = id % X_SIZE;
+  const y = Math.floor(id / X_SIZE);
+  return { x, y };
+}
+
+function inBounds(x, y) {
+  return x >= 0 && x < X_SIZE && y >= 0 && y < Y_SIZE;
+}
+
+function neighbors(id) {
+  const { x, y } = xyFromId(id);
+  const directions = [
+    { x, y: y - 1 },
+    { x: x + 1, y },
+    { x, y: y + 1 },
+    { x: x - 1, y },
+  ];
+
+  const valid = directions.filter(({ x, y }) => inBounds(x, y));
+  const finalIds = valid.map(({ x, y }) => y * X_SIZE + x);
+
+  return finalIds;
+}
+
+function checkWin(shipList) {
+  return shipList.every((s) => s.sunk);
 }
 
 module.exports = {
@@ -175,5 +331,6 @@ module.exports = {
   resetShips,
   startGame,
   playerShoot,
+  bot,
   botShoot,
 };
