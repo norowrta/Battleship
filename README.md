@@ -5,6 +5,7 @@
  - Add graveyard logik
  - Add better boat placing logik
  - Add wins/looses count
+ - Add hints
 
  - Add multiplayer
 
