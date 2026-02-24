@@ -208,18 +208,17 @@ function playerShoot(cellId) {
 }
 
 function bot() {
-  let targetCell;
+  let targetCell = null;
 
-  if (botState.queue.length > 0) {
+  while (botState.queue.length > 0) {
     const nextId = botState.queue.shift();
-    if (botState.tried.has(nextId)) {
-      for (let i = 0; i < botState.queue.length; i++) {
-        
-      }
+    if (!botState.tried.has(nextId)) {
+      targetCell = board.find((c) => c.id === nextId);
+      break;
     }
+  }
 
-    targetCell = board[nextId];
-  } else {
+  if (!targetCell) {
     const availableCells = board.filter(
       (c) =>
         !botState.tried.has(c.id) &&
@@ -263,7 +262,7 @@ function botShoot(targetCell) {
       return {
         hit: true,
         miss: false,
-        cell: targetCell,
+        updatedCell: targetCell,
         sunkShip,
         gameFinished: true,
         gameState,
@@ -274,7 +273,7 @@ function botShoot(targetCell) {
     return {
       hit: true,
       miss: false,
-      cell: targetCell,
+      updatedCell: targetCell,
       sunkShip,
       gameFinished: false,
       gameState,
@@ -287,7 +286,7 @@ function botShoot(targetCell) {
   return {
     hit: false,
     miss: true,
-    cell: targetCell,
+    updatedCell: targetCell,
     gameFinished: false,
     gameState,
   };

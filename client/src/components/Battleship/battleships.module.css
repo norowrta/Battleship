@@ -180,12 +180,19 @@
 
   width: fit-content;
 
-  transition: all 0.2 ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+
+.shipyardDestroyed:hover {
+   color: rgba(53, 56, 57, 0.75);
 }
 
 .destroyedShip {
   color: #ff0055;
   text-decoration-line: line-through;
+}
+.destroyedShip:hover {
+  color: #ff0055;
 }
 .shipyardShips {
   display: flex;

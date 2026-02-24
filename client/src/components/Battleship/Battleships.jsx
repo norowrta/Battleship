@@ -77,13 +77,25 @@ export default function Board() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeId]);
 
-  async function fetchOppBoard() {
-    try {
-      const respons = await axios.get(`${API_URL}/randomize`);
-      setOppBoard(respons.data.board);
-    } catch (error) {
-      console.error("Error:", error);
+  // async function fetchOppBoard() {
+  //   try {
+  //     const respons = await axios.get(`${API_URL}/randomize`);
+  //     setOppBoard(respons.data.board);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // }
+
+  async function startGame() {
+    const allPlaced = shipsState.every((ship) => ship.placed === true);
+    if (!allPlaced) {
+      alert("Please place all ships!");
+      return;
     }
+
+    await axios.post(`${API_URL}/board`, board);
+    await axios.post(`${API_URL}/start`);
+    setGamePhase(true);
   }
 
   async function reset() {
@@ -94,18 +106,6 @@ export default function Board() {
     } catch (err) {
       console.error(err);
     }
-  }
-
-  async function startGame() {
-    const allPlaced = shipsState.every((ship) => ship.placed === true);
-    if (!allPlaced) {
-      alert("Please place all ships!");
-      return;
-    }
-
-    await axios.post(`${API_URL}/board`, board);
-    setGamePhase(true);
-    fetchOppBoard();
   }
 
   function handleDragStart(event) {
@@ -214,7 +214,23 @@ export default function Board() {
     );
   }
 
-  // const activeShip = shipsState.find((s) => s.name === activeId);
+  async function handleShoot(cellId) {
+    if (!gamePhase) return;
+
+    try {
+      const response = await axios.post(`${API_URL}/shoot`, { cellId });
+
+      const { playerShot, botShot, gameState } = response.data;
+
+      setOppBoard((prev) =>
+        prev.map((c) => (c.id === playerShot.id ? playerShot : c)),
+      );
+
+      setBoard((prev) => prev.map((c) => (c.id === botShot.id ? botShot : c)));
+    } catch (error) {
+      console.error("Error", error);
+    }
+  }
 
   return (
     <DndContext
@@ -299,7 +315,11 @@ export default function Board() {
                       <div
                         key={item.id}
                         className={`${css.cell} ${css.cellEnemy}`}
-                      ></div>
+                        onClick={() => handleShoot(item.id)}
+                      >
+                        {item.status === "hit" && <span>X</span>}
+                        {item.status === "miss" && <span>•</span>}
+                      </div>
                     ))}
                   </div>
                 </div>

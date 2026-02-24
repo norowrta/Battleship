@@ -42,12 +42,12 @@ app.post("/api/shoot", (req, res) => {
 
   const playerResult = game.playerShoot(cellId);
 
-  if (conditplayerResultion === null) {
+  if (playerResult === null) {
     return res.status(400).json({ error: "Invalid shot" });
   }
 
   setTimeout(() => {
-    const botResult = game.botShoot();
+    const botResult = game.bot();
     res.json({
       playerShot: playerResult.updatedCell,
       botShot: botResult.updatedCell,
