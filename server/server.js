@@ -27,7 +27,7 @@ app.get("/api/randomize", (req, res) => {
 });
 
 app.post("/api/reset", (req, res) => {
-  fullReset();
+  game.fullReset();
   res.json({ board: game.getBoard(), ships: game.getShips() });
 });
 

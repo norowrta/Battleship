@@ -1,9 +1,9 @@
 import css from "./header.module.css";
+import Icon from "../Icon";
 
-import figmaLogo from "../../assets/figma.svg";
 import logo from "../../assets/battleship.svg";
 
-export default function Header() {
+export default function Header({ wins, loses }) {
   return (
     <header className={css.header}>
       <div className={css.headerContainer}>
@@ -13,16 +13,16 @@ export default function Header() {
             target="_blank"
             className={css.headerLink}
           >
-            <img
-              src={figmaLogo}
-              alt="Figma logo"
-              className={css.headerLogoFigma}
-            />
+            <Icon name="figma" className={css.headerLogoFigma} />
           </a>
           <span className={css.headerLine}></span>
-          <img src={logo} className={css.headerLogo} alt="ogo" />
+          <img src={logo} alt="logo" className={css.headerLogo} />
         </div>
-        <a href="#" className={css.themeChanger}>  </a>
+
+        <div className={css.headerCount}>
+          <span className={css.headerCountValue}> Wins: {wins} </span>
+          <span className={css.headerCountValue}> Looses: {loses} </span>
+        </div>
       </div>
     </header>
   );

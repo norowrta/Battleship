@@ -24,7 +24,7 @@ function generateEmptyBoard() {
   }));
 }
 
-export default function Board() {
+export default function Board(prop) {
   const [board, setBoard] = useState([]);
   const [shipsState, setShipsState] = useState([]);
   const [oppBoard, setOppBoard] = useState(generateEmptyBoard());
@@ -35,6 +35,7 @@ export default function Board() {
   const [gamePhase, setGamePhase] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   let player = 1;
 
@@ -107,6 +108,7 @@ export default function Board() {
 
   function handleDragStart(event) {
     setActiveId(event.active.id);
+    setShowHint(true);
   }
 
   function handleDragOver(event) {
@@ -177,6 +179,7 @@ export default function Board() {
         return cell;
       }),
     );
+    setShowHint(false);
   }
 
   function getShipContent(cell) {
@@ -232,18 +235,18 @@ export default function Board() {
         prev.map((c) => (c.id === playerShot.id ? playerShot : c)),
       );
 
-      setOppBoard((prev) =>
-        prev.map((c) => (c.id === playerShot.id ? playerShot : c)),
-      );
       setBoard((prev) => prev.map((c) => (c.id === botShot.id ? botShot : c)));
 
       if (gameState && gameState.phase === "finished") {
         setTimeout(() => {
           if (gameState.winner === "player") {
+            prop.setWin((prevWin) => prevWin + 1);
             alert("You won!");
           } else {
+            prop.setLose((prevLose) => prevLose + 1);
             alert("Bot won!");
           }
+
           setGamePhase(false);
           setIsGameOver(true);
         }, 300);
@@ -332,10 +335,14 @@ export default function Board() {
                         ) : null,
                       )}
                     </div>
+
+                    <p className={`${css.hint} ${showHint && css.hintShowed} `}>
+                      Press the "Spacebar" while holding a ship to change its
+                      orientation
+                    </p>
                   </div>
                 )}
               </div>
-
               <div className={css.vl}></div>
 
               <div className={css.contentPart}>

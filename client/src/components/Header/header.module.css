@@ -20,6 +20,7 @@
 }
 .headerLogoFigma {
   height: 2.54vh;
+  width: 1.6vw;
 }
 .headerLine {
   height: 2.65vh;
@@ -28,4 +29,18 @@
 }
 .headerLogo {
   height: 2.65vh;
+}
+.headerCountValue {
+  color: rgba(113, 124, 150, 1);
+
+  font-family: var(--sub-font);
+  font-style: Medium;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0%;
+}
+.headerCount {
+  display: flex;
+  flex-direction: column;
 }
