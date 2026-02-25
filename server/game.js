@@ -20,6 +20,7 @@ let botState = {
   tried: new Set(),
   hits: [],
   queue: [],
+  orientation: null,
 };
 
 function initializeShips() {
@@ -274,6 +275,15 @@ function botShoot(targetCell) {
 
   if (targetCell.hasShip) {
     targetCell.status = "hit";
+
+    if (botState.hits.length === 2) {
+      const diff = Math.abs(botState.hits[0] - botState.hits[1]);
+      if (diff === 1) {
+        botState.orientation = "horizontal";
+      } else if (diff === 10) {
+        botState.orientation = "vertical";
+      }
+    }
 
     const ship = registerHitOnShip(targetCell.id, ships);
 
