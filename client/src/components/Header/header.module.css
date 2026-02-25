@@ -29,6 +29,12 @@
 }
 .headerLogo {
   height: 2.65vh;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 .headerCountValue {
   color: rgba(113, 124, 150, 1);

@@ -46,6 +46,8 @@
   align-items: center;
 
   background-color: #717c96;
+
+  user-select: none;
 }
 
 .playerBlue {
@@ -81,6 +83,12 @@
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 2px;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 
 .numbers {
@@ -89,6 +97,12 @@
   display: grid;
   grid-template-rows: repeat(10, 1fr);
   gap: 2px;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 
 .label {
@@ -162,6 +176,12 @@
   letter-spacing: 15%;
   text-align: center;
   text-transform: uppercase;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 
 .graveyardShips {
@@ -237,6 +257,12 @@
   border: none;
 
   transition: background-color 0.2s ease-in-out;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 .buttonPlay:hover {
   background-color: #0351be;
@@ -289,6 +315,12 @@
 
   background-color: rgba(255, 255, 255, 0.7);
   border-radius: 8px;
+
+  user-select: none;
+  -drag: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
 }
 .hintShowed {
   opacity: 1;

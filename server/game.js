@@ -134,12 +134,6 @@ function placeShipsRandomly() {
       ship.orientation = orientation;
       ship.placed = true;
 
-      // newCoords.forEach((id) => {
-      //   localBoard[id].hasShip = true;
-      //   localBoard[id].status = "ship";
-      //   occupied.add(id);
-      // });
-
       newCoords.forEach((id) => {
         localBoard[id].hasShip = true;
         localBoard[id].status = "ship";
@@ -286,6 +280,13 @@ function botShoot(targetCell) {
     if (ship && ship.sunk) {
       sunkShip = ship;
       botState.queue = [];
+
+      for (let i = 0; i < ship.coordinates.length; i++) {
+        const id = ship.coordinates[i];
+
+        const surrounding = getSurroundingCells(id);
+        surrounding.forEach((cellId) => botState.tried.add(cellId));
+      }
     } else {
       const ns = neighbors(targetCell.id);
       for (const id of ns) {
