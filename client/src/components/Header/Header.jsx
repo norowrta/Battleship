@@ -21,7 +21,7 @@ export default function Header({ wins, loses }) {
 
         <div className={css.headerCount}>
           <span className={css.headerCountValue}> Wins: {wins} </span>
-          <span className={css.headerCountValue}> Looses: {loses} </span>
+          <span className={css.headerCountValue}> Loses: {loses} </span>
         </div>
       </div>
     </header>

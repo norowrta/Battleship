@@ -65,6 +65,7 @@ function fullReset() {
     tried: new Set(),
     hits: [],
     queue: [],
+    orientation: null,
   };
 
   gameState = {
@@ -275,13 +276,26 @@ function botShoot(targetCell) {
 
   if (targetCell.hasShip) {
     targetCell.status = "hit";
+    botState.hits.push(targetCell.id);
 
-    if (botState.hits.length === 2) {
-      const diff = Math.abs(botState.hits[0] - botState.hits[1]);
-      if (diff === 1) {
+    if (botState.hits.length >= 2) {
+      const firstHit = botState.hits[0];
+      const currentHit = targetCell.id;
+
+      if (Math.floor(firstHit / X_SIZE) === Math.floor(currentHit / X_SIZE)) {
         botState.orientation = "horizontal";
-      } else if (diff === 10) {
+      } else {
         botState.orientation = "vertical";
+      }
+
+      if (botState.orientation === "horizontal") {
+        botState.queue = botState.queue.filter(
+          (id) => Math.floor(id / X_SIZE) === Math.floor(firstHit / X_SIZE),
+        );
+      } else if (botState.orientation === "vertical") {
+        botState.queue = botState.queue.filter(
+          (id) => id % X_SIZE === firstHit % X_SIZE,
+        );
       }
     }
 
@@ -290,6 +304,8 @@ function botShoot(targetCell) {
     if (ship && ship.sunk) {
       sunkShip = ship;
       botState.queue = [];
+      botState.hits = [];
+      botState.orientation = null;
 
       for (let i = 0; i < ship.coordinates.length; i++) {
         const id = ship.coordinates[i];
@@ -298,7 +314,16 @@ function botShoot(targetCell) {
         surrounding.forEach((cellId) => botState.tried.add(cellId));
       }
     } else {
-      const ns = neighbors(targetCell.id);
+      let ns = neighbors(targetCell.id);
+
+      if (botState.orientation === "horizontal") {
+        ns = ns.filter(
+          (id) =>
+            Math.floor(id / X_SIZE) === Math.floor(targetCell.id / X_SIZE),
+        );
+      } else if (botState.orientation === "vertical") {
+        ns = ns.filter((id) => id % X_SIZE === targetCell.id % X_SIZE);
+      }
       for (const id of ns) {
         if (!botState.tried.has(id) && !botState.queue.includes(id)) {
           botState.queue.push(id);
